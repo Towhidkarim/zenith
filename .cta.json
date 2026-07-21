@@ -1,0 +1,31 @@
+{
+  "projectName": "zenith",
+  "mode": "file-router",
+  "typescript": true,
+  "packageManager": "pnpm",
+  "includeExamples": true,
+  "tailwind": true,
+  "addOnOptions": {
+    "drizzle": {
+      "database": "sqlite"
+    }
+  },
+  "envVarValues": {},
+  "git": false,
+  "install": false,
+  "routerOnly": false,
+  "version": 1,
+  "framework": "react",
+  "chosenAddOns": [
+    "biome",
+    "cloudflare",
+    "drizzle",
+    "shadcn",
+    "t3env",
+    "table",
+    "better-auth",
+    "tanstack-query",
+    "ai",
+    "store"
+  ]
+}
