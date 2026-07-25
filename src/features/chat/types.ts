@@ -11,3 +11,17 @@ export type SuggestionStarter = {
   label: string
   prompt: string
 }
+
+/**
+ * Minimal chat controller surface the shell needs.
+ * Inject into ChatWindow for history/tests; otherwise ChatWindow uses useZenithChat().
+ */
+export type ZenithChatApi = {
+  messages: ChatUIMessage[]
+  status: ChatStatus
+  sendMessage: (message: { text: string }) => void | Promise<void>
+  stop: () => void
+  error: Error | undefined
+  clearError: () => void
+  regenerate: () => void | Promise<void>
+}

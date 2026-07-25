@@ -1,6 +1,6 @@
 import { zValidator } from '@hono/zod-validator'
 import { createHono } from '#/hono/factory'
-import { createDummyChatStreamResponse } from '#/hono/lib/chat/dummy-stream'
+import { createChatStreamResponse } from '#/hono/lib/chat/create-stream'
 import { toChatUIMessages } from '#/hono/lib/chat/types'
 import {
   ChatHealthResponseSchema,
@@ -20,8 +20,7 @@ chat.post('/', zValidator('json', ChatPostBodySchema), async (c) => {
   const messages = toChatUIMessages(body.messages)
 
   // Optional: c.get('user') / c.get('session') when sessionMiddleware ran
-  // Replaceable seam: createGeminiChatStreamResponse(messages, c.env)
-  return createDummyChatStreamResponse(messages)
+  return createChatStreamResponse(messages, { env: c.env })
 })
 
 chat.get('/health', (c) => {

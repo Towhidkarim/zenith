@@ -12,11 +12,25 @@ import { OkResponseSchema } from './common'
  *   (AI SDK UI message stream), but the *request* still is.
  */
 
-/** Open part: text is strict; other AI SDK part shapes are accepted loosely. */
+/** Agent-step data part payload (mirrored by ChatDataParts['agent-step']). */
+export const AgentStepDataSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  status: z.enum(['active', 'done']),
+})
+
+export type AgentStepData = z.infer<typeof AgentStepDataSchema>
+
+/** Open part: text + agent-step are strict; other AI SDK shapes stay loose. */
 const chatMessagePartSchema = z.union([
   z.object({
     type: z.literal('text'),
     text: z.string(),
+  }),
+  z.object({
+    type: z.literal('data-agent-step'),
+    id: z.string().optional(),
+    data: AgentStepDataSchema,
   }),
   z.looseObject({
     type: z.string(),
@@ -27,7 +41,7 @@ export const ChatMessageSchema = z.object({
   id: z.string().optional(),
   role: z.enum(['user', 'assistant', 'system']),
   parts: z.array(chatMessagePartSchema).default([]),
-  metadata: z.unknown().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export const ChatPostBodySchema = z.object({

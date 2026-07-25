@@ -13,7 +13,10 @@ export type ChatDataParts = {
   }
 }
 
-export type ChatUIMessage = UIMessage<never, ChatDataParts>
+/** Metadata bag on chat messages (open for future product fields). */
+export type ChatMessageMetadata = Record<string, unknown>
+
+export type ChatUIMessage = UIMessage<ChatMessageMetadata, ChatDataParts>
 
 /** Narrow validated request messages into UIMessage-compatible values. */
 export function toChatUIMessages(messages: ChatPostBody['messages']): ChatUIMessage[] {
@@ -25,7 +28,7 @@ export function toChatUIMessages(messages: ChatPostBody['messages']): ChatUIMess
     }
 
     if (message.metadata !== undefined && message.metadata !== null) {
-      ;(uiMessage as { metadata?: unknown }).metadata = message.metadata
+      uiMessage.metadata = message.metadata as ChatMessageMetadata
     }
 
     return uiMessage
