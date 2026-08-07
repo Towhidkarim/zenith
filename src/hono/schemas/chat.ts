@@ -44,17 +44,29 @@ export const ChatMessageSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
+export const ChatResumeSchema = z.object({
+  runId: z.string(),
+  fromSeq: z.number().int().min(0).default(0),
+})
+
 export const ChatPostBodySchema = z.object({
+  /** useChat conversation id (stable per thread). */
   id: z.string().optional(),
   messages: z.array(ChatMessageSchema).default([]),
+  /** Reconnect to an existing run instead of starting a new turn. */
+  resume: ChatResumeSchema.optional(),
 })
 
 export type ChatPostBody = z.infer<typeof ChatPostBodySchema>
 export type ChatMessage = z.infer<typeof ChatMessageSchema>
 
+export const ChatRunStreamQuerySchema = z.object({
+  fromSeq: z.coerce.number().int().min(0).default(0),
+})
+
 export const ChatHealthResponseSchema = OkResponseSchema.extend({
   route: z.literal('chat'),
-  mode: z.enum(['dummy-stream', 'llm']),
+  mode: z.enum(['do-agent', 'llm']),
 })
 
 export type ChatHealthResponse = z.infer<typeof ChatHealthResponseSchema>

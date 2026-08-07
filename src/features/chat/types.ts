@@ -20,7 +20,8 @@ export type ZenithChatApi = {
   messages: ChatUIMessage[]
   status: ChatStatus
   sendMessage: (message: { text: string }) => void | Promise<void>
-  stop: () => void
+  /** Abort the client stream and cancel the server-side ChatRunDO. */
+  stop: () => void | Promise<void>
   error: Error | undefined
   clearError: () => void
   regenerate: () => void | Promise<void>

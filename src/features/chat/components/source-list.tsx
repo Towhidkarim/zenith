@@ -1,4 +1,3 @@
-import { ExternalLink } from 'lucide-react'
 import type { SourceLink } from '#/features/chat/lib/message-parts'
 
 type SourceListProps = {
@@ -8,7 +7,11 @@ type SourceListProps = {
   isStreaming?: boolean
 }
 
-/** Citation row list under an assistant turn. */
+function isInternalCite(url: string) {
+  return url.startsWith('#cite-')
+}
+
+/** Citation row list under an assistant turn (Act · Section labels). */
 export function SourceList({
   sources,
   deferWhileStreaming = false,
@@ -22,18 +25,30 @@ export function SourceList({
       <span className="text-xs font-medium uppercase tracking-[0.06em] text-muted-foreground">
         Sources
       </span>
-      {sources.map((source) => (
-        <a
-          key={source.sourceId}
-          href={source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{source.title ?? source.url}</span>
-        </a>
-      ))}
+      {sources.map((source) => {
+        const label = source.title ?? source.url
+        if (isInternalCite(source.url)) {
+          return (
+            <div
+              key={source.sourceId}
+              className="text-sm text-muted-foreground"
+            >
+              {label}
+            </div>
+          )
+        }
+        return (
+          <a
+            key={source.sourceId}
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            <span className="truncate">{label}</span>
+          </a>
+        )
+      })}
     </div>
   )
 }

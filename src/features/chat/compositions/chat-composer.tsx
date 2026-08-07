@@ -25,7 +25,8 @@ type ChatComposerProps = {
 
 /**
  * Pinned composer surface. Auto-growing textarea (up to ~5 lines) with a
- * morphing send/stop control. Slots left open for future attachments/tools.
+ * morphing send/stop control. While the agent is busy, input is locked and
+ * only stop is available.
  */
 export function ChatComposer({
   onSend,
@@ -40,18 +41,19 @@ export function ChatComposer({
 }: ChatComposerProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const canSend = value.trim().length > 0;
+  const canSend = value.trim().length > 0 && !isStreaming;
 
   useLayoutEffect(() => {
-    const el = textareaRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
-  }, [value])
+    const temp = value;
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
+  }, [value]);
 
   useEffect(() => {
-    if (autoFocus) textareaRef.current?.focus();
-  }, [autoFocus]);
+    if (autoFocus && !isStreaming) textareaRef.current?.focus();
+  }, [autoFocus, isStreaming]);
 
   const submit = () => {
     const trimmed = value.trim();
@@ -62,22 +64,30 @@ export function ChatComposer({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (isStreaming) return;
     submit();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
+      if (isStreaming) return;
       submit();
     }
+  };
+
+  const handleStopClick = () => {
+    onStop();
   };
 
   return (
     <form
       onSubmit={handleSubmit}
+      aria-busy={isStreaming}
       className={cn(
         'flex flex-col gap-2 rounded-[24px] border border-border bg-[var(--surface-1)] px-3 py-2.5',
         'focus-within:border-[var(--hairline-strong)]',
+        isStreaming && 'border-[var(--hairline-strong)]',
         className,
       )}
     >
@@ -92,8 +102,13 @@ export function ChatComposer({
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder={placeholder}
-          className='max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-[1.5] text-foreground placeholder:text-muted-foreground focus:outline-none'
+          readOnly={isStreaming}
+          aria-disabled={isStreaming}
+          placeholder={isStreaming ? 'Generating a reply…' : placeholder}
+          className={cn(
+            'max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent py-1.5 text-[15px] leading-[1.5] text-foreground placeholder:text-muted-foreground focus:outline-none',
+            isStreaming && 'cursor-not-allowed text-muted-foreground',
+          )}
         />
 
         <div className='flex shrink-0 items-center gap-1.5 pb-0.5'>
@@ -101,7 +116,7 @@ export function ChatComposer({
           <SendButton
             isStreaming={isStreaming}
             canSend={canSend}
-            onStop={onStop}
+            onStop={handleStopClick}
           />
         </div>
       </div>

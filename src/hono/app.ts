@@ -1,4 +1,5 @@
 import { createHono } from './factory'
+import { honoOnError } from './middleware/error-handler'
 import { sessionMiddleware } from './middleware/session'
 import chat from './routes/chat'
 import health from './routes/health'
@@ -12,6 +13,8 @@ import health from './routes/health'
  *
  * Auth: same Better Auth cookies via `sessionMiddleware`.
  * Protect a route with `requireAuth` after the session middleware.
+ *
+ * Errors: let routes throw; `onError` logs (verbose in DEV) and returns JSON.
  */
 const app = createHono()
   .basePath('/api/rest')
@@ -29,17 +32,7 @@ app.notFound((c) =>
   ),
 )
 
-app.onError((err, c) => {
-  console.error(
-    JSON.stringify({
-      message: 'Hono Unhandled Error',
-      error: err instanceof Error ? err.message : String(err),
-      path: c.req.path,
-    }),
-  )
-
-  return c.json({ error: 'Internal server error' }, 500)
-})
+app.onError(honoOnError)
 
 export type AppType = typeof app
 export { app }

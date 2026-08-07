@@ -4,6 +4,8 @@ import type { SuggestionStarter } from '#/features/chat/types'
 
 type ChatEmptyStateProps = {
   onSelect: (prompt: string) => void
+  /** True while a reply is in flight — starters must not queue another send. */
+  disabled?: boolean
   brand?: string
   cue?: string
   starters?: SuggestionStarter[]
@@ -12,6 +14,7 @@ type ChatEmptyStateProps = {
 /** Centered brand cue + domain starters shown before the first turn. */
 export function ChatEmptyState({
   onSelect,
+  disabled = false,
   brand = chatCopy.brand,
   cue = chatCopy.cue,
   starters = defaultStarters,
@@ -29,7 +32,12 @@ export function ChatEmptyState({
 
       <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
         {starters.map((starter) => (
-          <SuggestionChip key={starter.id} starter={starter} onSelect={onSelect} />
+          <SuggestionChip
+            key={starter.id}
+            starter={starter}
+            disabled={disabled}
+            onSelect={onSelect}
+          />
         ))}
       </div>
     </div>

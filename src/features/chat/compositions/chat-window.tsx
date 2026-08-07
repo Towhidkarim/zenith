@@ -57,19 +57,25 @@ function ChatWindowView({
   const showError = status === 'error' || Boolean(error)
 
   const handleSend = (text: string) => {
+    if (isStreaming) return
     clearError()
     void sendMessage({ text })
     void scrollToBottom({ animation: 'instant' })
   }
 
+  const handleStop = () => {
+    void stop()
+  }
+
   const handleRetry = () => {
+    if (isStreaming) return
     clearError()
     void regenerate()
   }
 
   const errorBanner = showError ? (
-    <div className="mb-2 flex items-center justify-between gap-3 rounded-[16px] border border-border bg-[var(--surface-1)] px-3 py-2 text-sm text-muted-foreground">
-      <span className="min-w-0 truncate">
+    <div className="mb-2 flex items-start justify-between gap-3 rounded-[16px] border border-border bg-[var(--surface-1)] px-3 py-2 text-sm text-muted-foreground">
+      <span className="min-w-0 whitespace-pre-wrap break-words">
         {error?.message?.trim() || chatCopy.streamError}
       </span>
       <button
@@ -87,7 +93,7 @@ function ChatWindowView({
       {errorBanner}
       <ChatComposer
         onSend={handleSend}
-        onStop={stop}
+        onStop={handleStop}
         isStreaming={isStreaming}
         placeholder={chatCopy.composerPlaceholder}
         autoFocus
@@ -106,6 +112,7 @@ function ChatWindowView({
               <div className="flex w-full max-w-4xl flex-col gap-8">
                 <ChatEmptyState
                   onSelect={handleSend}
+                  disabled={isStreaming}
                   brand={brand}
                   cue={cue}
                   starters={starters}
