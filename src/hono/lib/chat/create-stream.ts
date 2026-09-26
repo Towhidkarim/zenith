@@ -7,6 +7,8 @@ import { createDoChatRunRuntime } from '#/runtime'
 export type CreateChatStreamOptions = {
   /** useChat conversation id — metadata on the run, not the per-turn run id. */
   chatId?: string
+  /** Better Auth user id when signed in. */
+  userId?: string | null
   /** Reconnect to an in-flight or completed run without starting a new one. */
   resume?: {
     runId: string
@@ -39,6 +41,7 @@ export async function createChatStreamResponse(
     {
       runId,
       chatId: options.chatId,
+      userId: options.userId,
       messages: toAgentMessages(messages),
     },
     0,

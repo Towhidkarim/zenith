@@ -32,13 +32,27 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Zenith',
       },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'icon',
+        href: '/favicon.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        rel: 'icon',
+        href: '/favicon.png',
+        type: 'image/png',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/favicon.png',
       },
     ],
     scripts: [
@@ -54,7 +68,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
-  const isChat = pathname === '/';
+  const isMinimalChrome =
+    pathname === '/' ||
+    pathname === '/chat' ||
+    pathname.startsWith('/chat/') ||
+    pathname === '/sign-in' ||
+    pathname === '/sign-up';
 
   return (
     <html lang='en' suppressHydrationWarning>
@@ -62,7 +81,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className='font-sans antialiased wrap-anywhere selection:bg-foreground/10'>
-        {isChat ? (
+        {isMinimalChrome ? (
           <main className='h-svh'>{children}</main>
         ) : (
           <>

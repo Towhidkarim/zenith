@@ -1,6 +1,17 @@
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
+/** Better Auth tables (CLI: `pnpm auth:generate`). */
+export {
+  user,
+  session,
+  account,
+  verification,
+  userRelations,
+  sessionRelations,
+  accountRelations,
+} from './auth-schema'
+
 export const todos = sqliteTable('todos', {
   id: integer({ mode: 'number' }).primaryKey({
     autoIncrement: true,
@@ -11,7 +22,7 @@ export const todos = sqliteTable('todos', {
   ),
 })
 
-/** Conversation thread (Phase 3 — D1 / local sqlite). */
+/** Chat history tables live on Cloudflare D1 (`env.DB`). See migrations/. */
 export const chats = sqliteTable('chats', {
   id: text('id').primaryKey(),
   userId: text('user_id'),

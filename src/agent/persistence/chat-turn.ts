@@ -6,6 +6,10 @@ export type PersistChatTurnInput = {
   userText: string
   assistantText: string
   sources: Array<Extract<AgentEvent, { type: 'source' }>>
+  /** Better Auth user id when signed in; null/omit for anonymous. */
+  userId?: string | null
+  /** Conversation title — applied on first upsert when chat has no title. */
+  title?: string | null
 }
 
 type D1Like = {
@@ -16,36 +20,80 @@ type D1Like = {
   }
 }
 
+const TITLE_MAX = 60
+
+export function titleFromUserText(text: string): string {
+  const trimmed = text.trim().replace(/\s+/g, ' ')
+  if (!trimmed) return 'New chat'
+  if (trimmed.length <= TITLE_MAX) return trimmed
+  return `${trimmed.slice(0, TITLE_MAX - 1).trimEnd()}…`
+}
+
 /**
- * Persist a finished chat turn when a D1-compatible db is provided.
- * No-op if `chatId` or `db` is missing — history UI can wire later.
+ * Persist a finished (or cancelled) chat turn to D1.
+ * No-op if `chatId` or `db` is missing.
+ * Re-entrant for the same `runId` (replaces that run's message rows).
  */
 export async function persistChatTurn(
   input: PersistChatTurnInput,
   db?: D1Like,
 ): Promise<void> {
   if (!input.chatId || !db) return
-  if (!input.assistantText.trim() && input.sources.length === 0) return
+  if (!input.userText.trim() && !input.assistantText.trim()) return
 
   const now = Date.now()
+  const title = input.title?.trim() || titleFromUserText(input.userText)
+  const ownerId = input.userId ?? null
 
   try {
     await db
       .prepare(
-        `INSERT INTO chats (id, updated_at) VALUES (?, ?)
-         ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at`,
+        `INSERT INTO chats (id, user_id, title, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           updated_at = excluded.updated_at,
+           user_id = CASE
+             WHEN chats.user_id IS NULL AND excluded.user_id IS NOT NULL
+             THEN excluded.user_id
+             ELSE chats.user_id
+           END,
+           title = CASE
+             WHEN chats.title IS NULL OR chats.title = ''
+             THEN excluded.title
+             ELSE chats.title
+           END`,
       )
-      .bind(input.chatId, now)
+      .bind(input.chatId, ownerId, title, now)
       .run()
 
-    const userId = crypto.randomUUID()
+    // Replace any prior rows for this run (cancel re-persist / double-fire).
     await db
       .prepare(
-        `INSERT INTO messages (id, chat_id, role, content, run_id, created_at)
-         VALUES (?, ?, 'user', ?, ?, ?)`,
+        `DELETE FROM message_citations WHERE message_id IN (
+           SELECT id FROM messages WHERE run_id = ?
+         )`,
       )
-      .bind(userId, input.chatId, input.userText, input.runId, now)
+      .bind(input.runId)
       .run()
+    await db
+      .prepare(`DELETE FROM messages WHERE run_id = ?`)
+      .bind(input.runId)
+      .run()
+
+    if (input.userText.trim()) {
+      await db
+        .prepare(
+          `INSERT INTO messages (id, chat_id, role, content, run_id, created_at)
+           VALUES (?, ?, 'user', ?, ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          input.chatId,
+          input.userText,
+          input.runId,
+          now,
+        )
+        .run()
+    }
 
     const assistantId = crypto.randomUUID()
     await db
@@ -75,18 +123,17 @@ export async function persistChatTurn(
           assistantId,
           source.id,
           source.kind ?? 'act_section',
-          source.actTitle,
-          source.actNo,
-          source.actYear,
-          source.sectionNumber,
-          source.sectionTitle,
+          source.actTitle ?? '',
+          source.actNo ?? '',
+          source.actYear ?? 0,
+          source.sectionNumber ?? '',
+          source.sectionTitle ?? '',
           source.url ?? null,
           now + 1,
         )
         .run()
     }
   } catch (err) {
-    // Persistence must not fail the agent run (tables may not be migrated yet).
     console.error('persistChatTurn failed', err)
   }
 }

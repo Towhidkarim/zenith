@@ -35,11 +35,19 @@ export default function BetterAuthHeader() {
   }
 
   return (
-    <Link
-      to="/"
-      className="h-9 px-4 text-sm font-medium bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors inline-flex items-center"
-    >
-      Sign in
-    </Link>
+    <div className="flex items-center gap-2">
+      <Link
+        to="/sign-in"
+        className="h-9 px-4 text-sm font-medium text-neutral-900 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors inline-flex items-center rounded-full"
+      >
+        Log in
+      </Link>
+      <Link
+        to="/sign-up"
+        className="h-9 px-4 text-sm font-medium bg-neutral-900 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-900 hover:opacity-90 transition-opacity inline-flex items-center rounded-full"
+      >
+        Sign up
+      </Link>
+    </div>
   )
 }

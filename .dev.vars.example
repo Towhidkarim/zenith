@@ -3,3 +3,10 @@ GEMINI_API_KEY=
 QDRANT_API_KEY=
 QDRANT_URL=
 QDRANT_COLLECTION=bd_laws_v1
+
+# Better Auth — generate with: pnpm dlx auth@latest secret
+BETTER_AUTH_SECRET=
+
+# D1 is bound in wrangler.jsonc as `DB`.
+# Apply migrations locally: pnpm db:d1:local
+# Regenerate auth Drizzle schema: pnpm auth:generate

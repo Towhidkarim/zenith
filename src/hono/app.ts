@@ -2,6 +2,7 @@ import { createHono } from './factory'
 import { honoOnError } from './middleware/error-handler'
 import { sessionMiddleware } from './middleware/session'
 import chat from './routes/chat'
+import chats from './routes/chats'
 import health from './routes/health'
 
 /**
@@ -9,7 +10,7 @@ import health from './routes/health'
  *
  * Path convention:
  * - `/api/auth/*` → Better Auth (TanStack Start route)
- * - `/api/rest/*` → Hono (chat inference, future domain APIs)
+ * - `/api/rest/*` → Hono (chat inference, history, future domain APIs)
  *
  * Auth: same Better Auth cookies via `sessionMiddleware`.
  * Protect a route with `requireAuth` after the session middleware.
@@ -21,6 +22,7 @@ const app = createHono()
   .use('*', sessionMiddleware)
   .route('/health', health)
   .route('/chat', chat)
+  .route('/chats', chats)
 
 app.notFound((c) =>
   c.json(

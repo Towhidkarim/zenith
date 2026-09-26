@@ -20,7 +20,9 @@
 		"db:push": "drizzle-kit push",
 		"db:pull": "drizzle-kit pull",
 		"db:studio": "drizzle-kit studio",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"auth:generate": "pnpm dlx auth@latest generate --config src/lib/auth.cli.ts --adapter drizzle --dialect sqlite --output src/db/auth-schema.ts -y",
+		"db:d1:local": "wrangler d1 migrations apply zenith --local"
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^4.0.31",

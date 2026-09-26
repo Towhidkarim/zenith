@@ -29,10 +29,12 @@ const chat = createHono()
 chat.post('/', zValidator('json', ChatPostBodySchema), async (c) => {
   const body = c.req.valid('json')
   const messages = toChatUIMessages(body.messages)
+  const user = c.get('user')
 
   // Errors bubble to app.onError (console log + JSON { error }).
   return createChatStreamResponse(messages, {
     chatId: body.id,
+    userId: user?.id ?? null,
     resume: body.resume,
   })
 })

@@ -27,7 +27,8 @@ export function MessageList({ messages, status }: MessageListProps) {
           <motion.div
             key={message.id}
             variants={messagePresence}
-            initial="hidden"
+            // Don't re-play enter opacity on every stream token update.
+            initial={isStreaming ? false : 'hidden'}
             animate="visible"
           >
             {message.role === 'user' ? (

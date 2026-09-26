@@ -1,4 +1,5 @@
 export { ChatWindow } from '#/features/chat/compositions/chat-window'
+export { ChatShell } from '#/features/chat/compositions/chat-shell'
 export { useZenithChat } from '#/features/chat/hooks/use-zenith-chat'
 export type { UseZenithChatOptions } from '#/features/chat/hooks/use-zenith-chat'
 export type {

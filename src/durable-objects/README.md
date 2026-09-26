@@ -22,7 +22,7 @@ Hono uses `createDoChatRunRuntime()` (same binding via imported `env`) — no `c
 | Event log | SQLite (`events` + `meta`) |
 | Live streaming | NDJSON fan-out |
 | Cancel | `AbortSignal` into agent |
-| History hook | `persistChatTurn` when `env.DB` + `chatId` exist |
+| History | `persistChatTurn` → D1 `env.DB` when `chatId` is set |
 
 ## Env for legal RAG
 

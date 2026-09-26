@@ -1,316 +1,171 @@
-Welcome to your new TanStack Start app! 
+# Zenith
 
-# Getting Started
+> **Work in progress.** APIs, UI, auth, and persistence are under active development. Expect breaking changes.
 
-To run this application:
+**Zenith** is a legal AI chat assistant focused on **Bangladesh law** — acts, sections, and grounded answers with citations. It runs as a modern full-stack app on **Cloudflare Workers**: streaming chat in the browser, a pure multi-step RAG agent on the server, Durable Objects for run ownership, and D1 for conversation history.
 
-```bash
-pnpm install
-pnpm dev
-```
+Ask a question → the agent routes, plans retrieval, searches a Qdrant corpus (`bd_laws_v1`), judges sufficiency, then streams a cited answer back to the UI.
 
-# Building For Production
+---
 
-To build this application for production:
+## What it does
 
-```bash
-pnpm build
-```
+- **Conversational legal Q&A** with Grok-style step progress (“routing”, “retrieving”, “synthesizing”…)
+- **Hybrid grounding** — retrieved statute passages as anchors, plus model synthesis for totals / comparisons / follow-ups
+- **Inline citations** in answers (e.g. act title, year, section)
+- **Streaming UI** via the AI SDK (`useChat`) with stop/cancel of in-flight runs
+- **Anonymous chat history** in D1 (sidebar + `/chat/$id`); Better Auth sign-in/up is wired for accounts (claim / cross-device history still evolving)
+- **Draft-first chat** — a conversation id is only created when you send the first message
 
-## Testing
+---
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+## Stack
 
-```bash
-pnpm test
-```
+| Layer | Choice |
+|--------|--------|
+| UI | React 19, TanStack Start / Router, Tailwind, Motion, Streamdown |
+| API | Hono on `/api/rest/*` |
+| Auth | Better Auth (email + username/password) on `/api/auth/*` |
+| Inference | Google Gemini (AI SDK) + Qdrant vector search |
+| Runtime | Cloudflare Workers, Durable Objects (SQLite), D1 |
+| Agent | Pure TypeScript in `src/agent` (no Hono/DO imports in the loop) |
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
-
-```bash
-pnpm lint
-pnpm format
-pnpm check
-```
-
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "#/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-
-
-
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
-
-   ```bash
-   pnpm dlx @better-auth/cli secret
-   ```
-
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
-
-### Adding a Database (Optional)
-
-Better Auth can work in stateless mode, but to persist user data, add a database:
-
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-});
-```
-
-Then run migrations:
-
-```bash
-pnpm dlx @better-auth/cli migrate
-```
-
-
-# TanStack Chat Application
-
-Am example chat application built with TanStack Start, TanStack Store, and Claude AI.
-
-## .env Updates
-
-```env
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
-
-## ✨ Features
-
-### AI Capabilities
-- 🤖 Powered by Claude 3.5 Sonnet 
-- 📝 Rich markdown formatting with syntax highlighting
-- 🎯 Customizable system prompts for tailored AI behavior
-- 🔄 Real-time message updates and streaming responses (coming soon)
-
-### User Experience
-- 🎨 Modern UI with Tailwind CSS and Lucide icons
-- 🔍 Conversation management and history
-- 🔐 Secure API key management
-- 📋 Markdown rendering with code highlighting
-
-### Technical Features
-- 📦 Centralized state management with TanStack Store
-- 🔌 Extensible architecture for multiple AI providers
-- 🛠️ TypeScript for type safety
+---
 
 ## Architecture
 
-### Tech Stack
-- **Frontend Framework**: TanStack Start
-- **Routing**: TanStack Router
-- **State Management**: TanStack Store
-- **Styling**: Tailwind CSS
-- **AI Integration**: Anthropic's Claude API
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+```text
+Browser (useChat)
+  → Hono  POST /api/rest/chat
+  → ChatRunDO  (one DO ≈ one assistant turn / runId)
+  → runAgent   route → plan → retrieve → judge* → cite → answer
+  → AgentEvent NDJSON → UI SSE (AI SDK)
+  → D1         persist turn (chats / messages / citations)
 ```
 
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
+```mermaid
+flowchart LR
+  UI[Chat UI] -->|POST chatId + messages| Hono
+  Hono -->|RPC startAndSubscribe| DO[ChatRunDO]
+  DO -->|runAgent + deps| Agent[Pure agent]
+  Agent -->|embed + search| Qdrant[(Qdrant bd_laws_v1)]
+  Agent -->|LLM| Gemini[Gemini]
+  DO -->|NDJSON events| Hono
+  Hono -->|UI SSE| UI
+  DO -->|persistChatTurn| D1[(D1)]
+  UI -->|GET /chats| Hono
+  Hono --> D1
+  AuthUI[Sign in / up] --> BetterAuth[Better Auth]
+  BetterAuth --> D1
 ```
 
-This will create a link that will navigate to the `/about` route.
+### Important IDs
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+| ID | Meaning |
+|----|---------|
+| `chatId` | Conversation thread (URL `/chat/$chatId`, D1 `chats.id`) |
+| `runId` | One assistant turn (Durable Object name, `messages.run_id`) |
 
-### Using A Layout
+Disconnecting the HTTP stream does **not** cancel the agent. Explicit cancel calls `DELETE /api/rest/chat/runs/:runId`, which aborts the DO-owned run.
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
+### Layout (high level)
 
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
+```text
+src/
+  agent/            # Pure RAG agent (ports, prompts, Qdrant, Gemini)
+  durable-objects/  # ChatRunDO — event log, fan-out, cancel, persist
+  hono/             # REST: chat stream, history, health
+  features/chat/    # Chat shell, sidebar, composer, useZenithChat
+  db/               # Drizzle schema (app + Better Auth)
+  lib/auth*.ts      # Better Auth server + client
+  routes/           # TanStack pages: /, /chat/$id, /sign-in, /sign-up
+  server.ts         # Worker entry: auth → Hono → Start
+migrations/         # D1 SQL migrations
 ```
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+More detail: [`src/agent/README.md`](src/agent/README.md), [`src/durable-objects/README.md`](src/durable-objects/README.md).
 
-## Server Functions
+---
 
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
+## Status / roadmap snapshot
 
-```tsx
-import { createServerFn } from '@tanstack/react-start'
+**In place**
 
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
+- Multi-step legal RAG agent + streaming chat UI
+- DO-backed runs with cancel
+- D1 chat history (anonymous ownership via `localStorage` ids)
+- Better Auth + minimal sign-in / sign-up pages
+- Page titles + Zenith favicon
 
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
+**Still WIP / next**
+
+- Account-scoped history list + claim anonymous chats on login
+- Production D1 `database_id` (replace local placeholder)
+- Richer message persistence (reasoning / steps optional)
+- Auth hardening and product polish
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 22+ and [pnpm](https://pnpm.io)
+- Gemini API key
+- Qdrant collection with Bangladesh law embeddings (default name `bd_laws_v1`, **768-dim**)
+
+### Install & env
+
+```bash
+pnpm install
+cp .dev.vars.example .dev.vars
 ```
 
-## API Routes
+Edit **`.dev.vars`** (Cloudflare Worker bindings — **not** only `.env.local`):
 
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
+```bash
+GEMINI_API_KEY=...
+QDRANT_URL=...
+QDRANT_API_KEY=...
+QDRANT_COLLECTION=bd_laws_v1
+BETTER_AUTH_SECRET=...   # pnpm dlx auth@latest secret
 ```
 
-## Data Fetching
+`BETTER_AUTH_URL` defaults to `http://localhost:3000` in `wrangler.jsonc`.
 
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
+### Database (local D1)
 
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
+```bash
+pnpm db:d1:local    # apply migrations under ./migrations
+pnpm cf-typegen     # refresh Env types after wrangler changes
 ```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+### Dev server
 
-# Demo files
+```bash
+pnpm dev            # http://localhost:3000
+```
 
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
+### Useful scripts
 
-# Learn More
+| Script | Purpose |
+|--------|---------|
+| `pnpm dev` | Local Workers + Vite |
+| `pnpm build` / `pnpm deploy` | Production build / Wrangler deploy |
+| `pnpm db:d1:local` | Apply D1 migrations locally |
+| `pnpm auth:generate` | Regenerate Better Auth Drizzle schema → `src/db/auth-schema.ts` |
+| `pnpm check` | Biome lint + format check |
 
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+---
 
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+## Configuration notes
+
+- **Worker secrets** live in `.dev.vars` for local; use `wrangler secret put …` in production.
+- **Embedding dims** and collection defaults are in [`src/agent/config.ts`](src/agent/config.ts) — keep them aligned with your Qdrant index.
+- For a **remote** D1 database, create one with Wrangler, set `database_id` in `wrangler.jsonc`, then apply migrations without `--local`.
+
+---
+
+## License
+
+Private / unpublished unless otherwise stated. All rights reserved while the project remains in early development.

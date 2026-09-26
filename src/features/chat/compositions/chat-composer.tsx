@@ -44,12 +44,11 @@ export function ChatComposer({
   const canSend = value.trim().length > 0 && !isStreaming;
 
   useLayoutEffect(() => {
-    const temp = value;
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
-  }, [value]);
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
+  }, [value])
 
   useEffect(() => {
     if (autoFocus && !isStreaming) textareaRef.current?.focus();

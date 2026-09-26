@@ -4,8 +4,10 @@ export type RunStatus = 'idle' | 'running' | 'done' | 'error' | 'cancelled'
 
 export type StartChatRunInput = {
   runId: string
-  /** useChat conversation id — metadata for future per-thread DO routing. */
+  /** useChat conversation id — D1 chats.id / URL param. */
   chatId?: string
+  /** Better Auth user id when signed in. */
+  userId?: string | null
   messages: Array<{ role: 'user' | 'assistant' | 'system'; text: string }>
 }
 

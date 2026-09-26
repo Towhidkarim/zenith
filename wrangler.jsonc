@@ -28,11 +28,21 @@
 			}
 		]
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "zenith",
+			"database_id": "local-zenith-placeholder",
+			"migrations_dir": "migrations"
+		}
+	],
 	/**
 	 * Secrets (local): put in `.dev.vars` — GEMINI_API_KEY, QDRANT_URL, QDRANT_API_KEY.
 	 * Production: `wrangler secret put GEMINI_API_KEY` etc.
+	 * D1: `wrangler d1 migrations apply zenith --local` (and without --local for remote).
 	 */
 	"vars": {
-		"QDRANT_COLLECTION": "bd_laws_v1"
+		"QDRANT_COLLECTION": "bd_laws_v1",
+		"BETTER_AUTH_URL": "http://localhost:3000"
 	}
 }

@@ -142,6 +142,25 @@ export class ChatRunDO extends DurableObject<Env> {
     const collectedSources: AgentEvent[] = []
     let assistantText = ''
 
+    const userText =
+      [...input.messages].reverse().find((m) => m.role === 'user')?.text ?? ''
+
+    const persist = () =>
+      persistChatTurn(
+        {
+          chatId: input.chatId,
+          runId: input.runId,
+          userId: input.userId,
+          userText,
+          assistantText,
+          sources: collectedSources.filter(
+            (e): e is Extract<AgentEvent, { type: 'source' }> =>
+              e.type === 'source',
+          ),
+        },
+        env.DB,
+      )
+
     try {
       for await (const event of runAgent(agentInput)) {
         if (signal.aborted) break
@@ -152,29 +171,11 @@ export class ChatRunDO extends DurableObject<Env> {
       }
 
       if (this.status === 'running') this.setStatus('done')
-
-      // Best-effort D1 persistence when binding + chatId exist (Phase 3 hook).
-      const db = (env as Env & { DB?: D1Database }).DB
-      this.ctx.waitUntil(
-        persistChatTurn(
-          {
-            chatId: input.chatId,
-            runId: input.runId,
-            userText:
-              [...input.messages].reverse().find((m) => m.role === 'user')
-                ?.text ?? '',
-            assistantText,
-            sources: collectedSources.filter(
-              (e): e is Extract<AgentEvent, { type: 'source' }> =>
-                e.type === 'source',
-            ),
-          },
-          db,
-        ),
-      )
+      this.ctx.waitUntil(persist())
     } catch (err) {
       if (signal.aborted) {
         if (this.status === 'running') this.setStatus('cancelled')
+        this.ctx.waitUntil(persist())
         return
       }
       const message = logAndFormatError(`ChatRunDO(${input.runId})`, err)
@@ -184,6 +185,7 @@ export class ChatRunDO extends DurableObject<Env> {
         message,
       })
       this.append({ type: 'done' })
+      this.ctx.waitUntil(persist())
     }
   }
 

@@ -15,6 +15,8 @@ export type UseZenithChatOptions = {
   messages?: ChatUIMessage[]
   /** Override API path (defaults to CHAT_API_PATH). */
   api?: string
+  /** Fired when a stream finishes (success, abort, or error). */
+  onFinish?: () => void
 }
 
 /**
@@ -28,8 +30,10 @@ export type UseZenithChatOptions = {
 export function useZenithChat(
   options: UseZenithChatOptions = {},
 ): ZenithChatApi {
-  const { id, messages, api = CHAT_API_PATH } = options
+  const { id, messages, api = CHAT_API_PATH, onFinish } = options
   const activeRunIdRef = useRef<string | null>(null)
+  const onFinishRef = useRef(onFinish)
+  onFinishRef.current = onFinish
 
   const transport = useMemo(
     () =>
@@ -65,29 +69,28 @@ export function useZenithChat(
   const chat = useChat<ChatUIMessage>({
     id,
     messages,
-    // Coalesce rapid stream deltas so Streamdown doesn't reparse every token.
-    throttle: 80,
+    // Keep stream updates snappy for visible token growth.
+    throttle: 32,
     transport,
     onError: (err) => {
-      // Browser console — useChat often only keeps a short statusText ("Bad Request").
       console.error('[zenith:chat]', err)
     },
     onFinish: () => {
       activeRunIdRef.current = null
+      onFinishRef.current?.()
     },
   })
 
   const stop = useCallback(async () => {
     const runId = activeRunIdRef.current
-    // Abort client read first so the UI unlocks immediately.
     chat.stop()
     if (!runId) return
 
     try {
-      const res = await fetch(
-        `${api}/runs/${encodeURIComponent(runId)}`,
-        { method: 'DELETE', credentials: 'include' },
-      )
+      const res = await fetch(`${api}/runs/${encodeURIComponent(runId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
       if (!res.ok) {
         console.error(
           '[zenith:chat:cancel]',

@@ -14,14 +14,14 @@ type AssistantMessageProps = {
 }
 
 /**
- * Full-width assistant turn — no bubble. Renders agent steps, reasoning,
- * streamed markdown, and source links in a stable order.
+ * Full-width assistant turn.
+ * Streams with Streamdown + built-in caret (modern AI chat pattern);
+ * settles to static markdown when the turn finishes.
  */
 function AssistantMessageImpl({ message, isStreaming }: AssistantMessageProps) {
   const { steps, reasoning, isReasoningActive, text, sources } =
     extractAssistantView(message)
   const hasText = text.length > 0
-  // Still "thinking" until the final answer text begins (or the stream ends).
   const isThinking = isStreaming && !hasText
 
   return (
@@ -33,16 +33,13 @@ function AssistantMessageImpl({ message, isStreaming }: AssistantMessageProps) {
       ) : null}
 
       {hasText ? (
-        <div
-          className={
-            isStreaming
-              ? 'zenith-markdown zenith-markdown--streaming text-[15px] leading-[1.6] text-foreground'
-              : 'zenith-markdown text-[15px] leading-[1.6] text-foreground'
-          }
-        >
+        <div className="zenith-markdown text-[15px] leading-[1.6] text-foreground">
           <Streamdown
             mode={isStreaming ? 'streaming' : 'static'}
+            isAnimating={isStreaming}
+            caret={isStreaming ? 'block' : undefined}
             parseIncompleteMarkdown
+            animated={isStreaming}
             className="space-y-3"
           >
             {text}
@@ -50,8 +47,11 @@ function AssistantMessageImpl({ message, isStreaming }: AssistantMessageProps) {
         </div>
       ) : null}
 
-      {!hasText && isStreaming && steps.length === 0 && !reasoning ? (
-        <StreamingCursor />
+      {/* Pre-token thinking: steps/reasoning may show; always keep a live caret. */}
+      {isThinking ? (
+        <div className="flex min-h-[1.5em] items-center">
+          <StreamingCursor />
+        </div>
       ) : null}
 
       <SourceList

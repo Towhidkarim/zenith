@@ -216,23 +216,14 @@ body {
     opacity: 1;
   }
   50% {
-    opacity: 0.18;
+    opacity: 0.2;
   }
+}
+
+.zenith-stream-caret {
+  animation: zenith-caret 1.05s steps(1, end) infinite;
 }
 
 .zenith-markdown {
   overflow-wrap: break-word;
-}
-
-/* Thin caret on the last markdown block while streaming. */
-.zenith-markdown--streaming > div > *:last-child::after {
-  content: '';
-  display: inline-block;
-  width: 1.5px;
-  height: 0.95em;
-  margin-left: 0.15ch;
-  vertical-align: text-bottom;
-  background-color: currentColor;
-  border-radius: 1px;
-  animation: zenith-caret 1.15s ease-in-out infinite;
 }
