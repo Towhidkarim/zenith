@@ -3,7 +3,6 @@ import { Streamdown } from 'streamdown'
 import { AgentStepList } from '#/features/chat/components/agent-step-list'
 import { ReasoningBlock } from '#/features/chat/components/reasoning-block'
 import { SourceList } from '#/features/chat/components/source-list'
-import { StreamingCursor } from '#/features/chat/components/streaming-cursor'
 import { extractAssistantView } from '#/features/chat/lib/message-parts'
 import type { ChatUIMessage } from '#/features/chat/types'
 
@@ -15,8 +14,8 @@ type AssistantMessageProps = {
 
 /**
  * Full-width assistant turn.
- * Streams with Streamdown + built-in caret (modern AI chat pattern);
- * settles to static markdown when the turn finishes.
+ * Streamdown fades tokens in as they arrive.
+ * Stagger stays at 0 so later list items are not held invisible.
  */
 function AssistantMessageImpl({ message, isStreaming }: AssistantMessageProps) {
   const { steps, reasoning, isReasoningActive, text, sources } =
@@ -37,20 +36,16 @@ function AssistantMessageImpl({ message, isStreaming }: AssistantMessageProps) {
           <Streamdown
             mode={isStreaming ? 'streaming' : 'static'}
             isAnimating={isStreaming}
-            caret={isStreaming ? 'block' : undefined}
             parseIncompleteMarkdown
-            animated={isStreaming}
+            animated={
+              isStreaming
+                ? { animation: 'fadeIn', duration: 150, stagger: 0 }
+                : false
+            }
             className="space-y-3"
           >
             {text}
           </Streamdown>
-        </div>
-      ) : null}
-
-      {/* Pre-token thinking: steps/reasoning may show; always keep a live caret. */}
-      {isThinking ? (
-        <div className="flex min-h-[1.5em] items-center">
-          <StreamingCursor />
         </div>
       ) : null}
 

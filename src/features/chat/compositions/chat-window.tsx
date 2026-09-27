@@ -6,7 +6,7 @@ import { MessageList } from '#/features/chat/compositions/message-list'
 import { useZenithChat } from '#/features/chat/hooks/use-zenith-chat'
 import { chatCopy } from '#/features/chat/lib/chat-copy'
 import { ChatScrollProvider } from '#/features/chat/lib/chat-scroll-context'
-import { springSoft } from '#/features/chat/lib/motion'
+import { duration, easeOut, springSoft } from '#/features/chat/lib/motion'
 import type { SuggestionStarter, ZenithChatApi } from '#/features/chat/types'
 import { cn } from '#/lib/utils'
 
@@ -102,13 +102,16 @@ function ChatWindowView({
   )
 
   const layoutTransition = reduceMotion ? { duration: 0 } : springSoft
+  const emptyEnter = reduceMotion
+    ? { duration: 0 }
+    : { duration: duration.presence, ease: easeOut, delay: 0.12 }
 
   return (
     <ChatScrollProvider value={stick}>
       <LayoutGroup>
         <div className="flex h-full min-h-0 flex-col">
           {isEmpty ? (
-            <div className="flex flex-1 items-center justify-center px-4">
+            <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
               <div className="flex w-full max-w-4xl flex-col gap-8">
                 <ChatEmptyState
                   onSelect={handleSend}
@@ -117,8 +120,20 @@ function ChatWindowView({
                   cue={cue}
                   starters={starters}
                 />
-                <motion.div layoutId="chat-composer" transition={layoutTransition}>
+                <motion.div
+                  layoutId="chat-composer"
+                  initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    layout: layoutTransition,
+                    opacity: emptyEnter,
+                    y: emptyEnter,
+                  }}
+                >
                   {composer}
+                  <p className="mt-3 text-center text-[12px] leading-relaxed text-muted-foreground/80">
+                    {chatCopy.disclaimer}
+                  </p>
                 </motion.div>
               </div>
             </div>
@@ -139,7 +154,7 @@ function ChatWindowView({
                   <MessageList messages={messages} status={status} />
                 </div>
               </div>
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 <div className="mx-auto w-full max-w-4xl">
                   <motion.div layoutId="chat-composer" transition={layoutTransition}>
                     {composer}

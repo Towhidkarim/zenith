@@ -17,6 +17,13 @@ import {
   takePendingSend,
 } from '#/features/chat/lib/pending-send'
 import type { ChatUIMessage, ZenithChatApi } from '#/features/chat/types'
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '#/components/ui/sidebar'
+import { authClient } from '#/lib/auth-client'
+import { cn } from '#/lib/utils'
 
 type ChatShellProps = {
   /**
@@ -112,7 +119,7 @@ export function ChatShell({ chatId }: ChatShellProps) {
   }, [isDraft, navigate])
 
   return (
-    <div className="flex h-full min-h-0 w-full">
+    <SidebarProvider className="h-full min-h-0">
       <ChatSidebar
         chats={chats}
         loading={sidebarLoading}
@@ -120,8 +127,8 @@ export function ChatShell({ chatId }: ChatShellProps) {
         isDraft={isDraft}
         onNewChat={openNewChat}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <ChatAuthBar />
+      <SidebarInset className="min-h-0 overflow-hidden">
+        <ChatTopBar />
         <div className="relative min-h-0 flex-1">
           {active?.kind === 'draft' ? (
             <DraftCenter key={active.key} onStart={startDraftSession} />
@@ -139,8 +146,26 @@ export function ChatShell({ chatId }: ChatShellProps) {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
+
+/** Opens the mobile sheet. Desktop collapse stays inside the icon rail. */
+function ChatTopBar() {
+  const { data: session, isPending } = authClient.useSession()
+  const signedIn = !isPending && Boolean(session?.user)
+
+  return (
+    <header
+      className={cn(
+        'flex h-12 shrink-0 items-center gap-2 px-2 pt-[env(safe-area-inset-top)] md:px-4 md:pt-0',
+        signedIn && 'md:hidden',
+      )}
+    >
+      <SidebarTrigger className="md:hidden" />
+      <ChatAuthBar />
+    </header>
   )
 }
 

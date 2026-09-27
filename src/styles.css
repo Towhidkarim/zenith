@@ -6,6 +6,7 @@
 @source '../node_modules/streamdown/dist/*.js';
 
 @import 'tw-animate-css';
+@import 'streamdown/styles.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -78,11 +79,11 @@
   --chart-4: #a3a3a3;
   --chart-5: #d4d4d4;
   --radius: 0.75rem;
-  --sidebar: #fafafa;
+  --sidebar: #ffffff;
   --sidebar-foreground: #000000;
   --sidebar-primary: #000000;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fafafa;
+  --sidebar-accent: #f0f0f0;
   --sidebar-accent-foreground: #000000;
   --sidebar-border: #e5e5e5;
   --sidebar-ring: rgba(59, 130, 246, 0.5);
@@ -207,21 +208,6 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Thin streaming caret. */
-@keyframes zenith-caret {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.2;
-  }
-}
-
-.zenith-stream-caret {
-  animation: zenith-caret 1.05s steps(1, end) infinite;
 }
 
 .zenith-markdown {

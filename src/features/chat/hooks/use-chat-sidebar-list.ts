@@ -9,22 +9,34 @@ export type SidebarChat = {
 
 const CHATS_API = '/api/rest/chats'
 
+/** Survives `/` ↔ `/chat/$chatId` remounts so titles don't blank out. */
+let sidebarCache: SidebarChat[] = []
+
+function publishChats(
+  next: SidebarChat[],
+  setChats: (chats: SidebarChat[]) => void,
+) {
+  sidebarCache = next
+  setChats(next)
+}
+
 /**
  * Anonymous sidebar: localStorage ids → GET /api/rest/chats?ids=
+ * Titles only. The open thread is loaded separately.
  */
 export function useChatSidebarList() {
-  const [chats, setChats] = useState<SidebarChat[]>([])
-  const [loading, setLoading] = useState(true)
+  const [chats, setChats] = useState<SidebarChat[]>(sidebarCache)
+  const [loading, setLoading] = useState(sidebarCache.length === 0)
 
   const refresh = useCallback(async () => {
     const ids = getOwnedChatIds()
     if (ids.length === 0) {
-      setChats([])
+      publishChats([], setChats)
       setLoading(false)
       return
     }
 
-    setLoading(true)
+    if (sidebarCache.length === 0) setLoading(true)
     try {
       const res = await fetch(
         `${CHATS_API}?ids=${encodeURIComponent(ids.join(','))}`,
@@ -32,7 +44,6 @@ export function useChatSidebarList() {
       )
       if (!res.ok) {
         console.error('[zenith:chats:list]', res.status)
-        setChats([])
         return
       }
       const data = (await res.json()) as {
@@ -52,10 +63,9 @@ export function useChatSidebarList() {
       for (const row of data.chats) {
         if (!ordered.some((c) => c.id === row.id)) ordered.push(row)
       }
-      setChats(ordered)
+      publishChats(ordered, setChats)
     } catch (err) {
       console.error('[zenith:chats:list]', err)
-      setChats([])
     } finally {
       setLoading(false)
     }
@@ -71,7 +81,7 @@ export function useChatSidebarList() {
       if (optimistic) {
         setChats((prev) => {
           const rest = prev.filter((c) => c.id !== chatId)
-          return [
+          const next = [
             {
               id: chatId,
               title: optimistic.title,
@@ -79,6 +89,8 @@ export function useChatSidebarList() {
             },
             ...rest,
           ]
+          sidebarCache = next
+          return next
         })
       }
       void refresh()
